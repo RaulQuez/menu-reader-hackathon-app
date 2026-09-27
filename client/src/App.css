@@ -1,184 +1,486 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
+/* Layout and components. Colors/fonts/sizes come from theme/tokens.css. */
 
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+/* ---------- shared ---------- */
+
+#root {
+  max-width: 520px; /* phone-width column, centered on bigger screens */
+  margin: 0 auto;
+  min-height: 100dvh;
 }
 
-.hero {
-  position: relative;
+h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.15; }
+h2 { font-size: 1.25rem; font-weight: 800; }
+h1:focus { outline: none; } /* focused by code for screen readers, not by the user */
 
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
+.muted { color: var(--muted); }
 
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+.notice {
+  padding: 12px 14px;
+  border-left: 6px solid var(--ask);
+  background: var(--surface);
+  color: var(--muted);
 }
 
-#center {
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 10px; }
+
+button, .big-button, .back-link, .tab { cursor: pointer; }
+
+/* large full-width action: primary is yellow, secondary is outlined */
+.big-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  border: 2px solid var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-decoration: none;
+  text-align: center;
+}
+
+.big-button.secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.caption { min-height: 3em; font-size: 1.3rem; font-weight: 700; }
+
+/* ---------- tab layout + bottom nav ---------- */
+
+.tab-layout {
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  padding-bottom: 96px; /* room for the fixed nav so it never covers content */
 }
 
-#next-steps {
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 520px;
   display: flex;
+  background: var(--nav-bg);
   border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom); /* iPhone home bar */
+}
+
+.tab {
+  flex: 1;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* NavLink sets aria-current="page" on the active tab; style off that */
+.tab[aria-current="page"] { color: var(--link); }
+
+.tab-icon { position: relative; display: flex; }
+
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -14px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 12px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-page {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- home ---------- */
+
+.home-hero {
+  background: var(--hero-bg);
+  padding: 32px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.allergy-summary { color: var(--muted); font-size: 1.05rem; }
+.allergy-summary strong { color: var(--text); }
+
+.scan-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 140px;
+  padding: 20px 20px 20px 24px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--brand);
+  color: var(--on-brand);
   text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
 }
 
-#docs {
-  border-right: 1px solid var(--border);
+.scan-hero:active { transform: scale(0.98); }
 
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+.scan-hero-text { display: flex; flex-direction: column; gap: 6px; }
+.scan-hero-title { font-size: clamp(1.5rem, 7.5vw, 1.9rem); font-weight: 800; line-height: 1.1; }
+.scan-hero-sub { font-weight: 700; }
+
+.scan-hero-icon {
+  flex: none;
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: var(--on-brand);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-#next-steps ul {
+/* looks like a link, behaves like a button */
+.link-button, .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  min-height: 48px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--link);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.text-button { font-weight: 400; color: var(--muted); }
+
+.recent { padding: 24px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scan-list {
   list-style: none;
+  margin: 0;
   padding: 0;
   display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
+  flex-direction: column;
+  gap: 12px;
 }
 
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
+.scan-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 88px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
 }
 
-.ticks {
-  position: relative;
+.scan-card-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.scan-card-name { font-weight: 800; font-size: 1.15rem; overflow-wrap: anywhere; }
+.scan-card-meta { color: var(--muted); font-size: 0.95rem; }
+.scan-card-stats { display: flex; gap: 10px; font-weight: 800; white-space: nowrap; }
+.stat-avoid { color: var(--avoid); }
+.stat-ask { color: var(--ask); }
+
+.empty { color: var(--muted); }
+
+/* ---------- allergies ---------- */
+
+.checks {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: var(--tap);
+  padding: 8px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-transform: capitalize;
+}
+
+.check:has(input:checked) { border-color: var(--link); }
+
+.check input {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  accent-color: var(--brand);
+}
+
+/* ---------- flow screens (welcome, reading) ---------- */
+
+.flow-screen {
+  min-height: 100dvh;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.spinner {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 6px solid var(--border);
+  border-top-color: var(--brand);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- menu (asking) screen ---------- */
+
+.menu-screen {
+  min-height: 100dvh;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.menu-bar { display: flex; flex-direction: column; gap: 8px; }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 48px;
+  color: var(--link);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ask label { display: block; margin-bottom: 6px; color: var(--muted); }
+
+.ask input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.ask button {
+  min-height: var(--tap);
+  padding: 0 20px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.ask button:disabled { opacity: 0.6; }
+
+/* pinned "Ask about the menu" bar. sticky (not fixed) so it stays inside the
+   page column and never covers the last dish once you scroll to the end */
+.ask-bar {
+  position: sticky;
+  bottom: 0;
+  margin: auto -16px 0; /* stretch over the page padding */
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 2px solid var(--border);
+  display: flex;
+}
+
+/* ---------- answer modal (AnswerSheet) ---------- */
+
+/* a <dialog> shown as a sheet that sits at the bottom of the screen */
+.answer-sheet {
   width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+  max-width: 520px;
+  max-height: 85dvh;
+  margin: auto auto 0; /* pin to the bottom, centered */
+  padding: 0;
+  border: 2px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--bg);
+  color: var(--text);
 }
+
+/* the dimmed page behind the modal */
+.answer-sheet::backdrop { background: rgb(0 0 0 / 0.7); }
+
+.sheet-body {
+  padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sheet-close {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+/* long answers scroll inside the modal instead of pushing the buttons away */
+.sheet-caption {
+  min-height: 2.5em;
+  max-height: 40dvh;
+  overflow-y: auto;
+}
+
+.sheet-actions { display: flex; gap: 10px; }
+
+.sheet-repeat {
+  min-height: 72px;
+  padding: 0 18px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-weight: 700;
+}
+
+/* the voice button: always on screen, easy to hit with a thumb */
+.main-button {
+  flex: 1;
+  min-height: 72px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.main-button.listening { animation: pulse 1.2s ease-in-out infinite; }
+
+.main-button:disabled {
+  background: var(--surface);
+  color: var(--text);
+  border: 3px dashed var(--border);
+}
+
+@keyframes pulse { 50% { transform: scale(0.97); } }
+
+.menu-list { display: flex; flex-direction: column; gap: 20px; }
+
+.items {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.item.avoid { border-style: dashed; }
+.item p { margin-top: 6px; }
+
+.item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 800;
+}
+
+/* Read / Describe / Ask on every dish: three equal buttons, each a big target */
+.item-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.item-actions button {
+  min-height: var(--tap);
+  padding: 6px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.item-actions button:active { transform: scale(0.97); }
+
+.tag-avoid { color: var(--avoid); font-weight: 800; }
+.tag-ask { color: var(--ask); font-weight: 800; }
+
+/* ---------- translation ---------- */
+
+/* the dish name as printed, under the translated name: say this to order */
+.original-name { font-style: italic; color: var(--muted); }
+
+.settings-section { display: flex; flex-direction: column; gap: 12px; }
+.settings-section + .settings-section { margin-top: 12px; }
+
+/* development-only voice log in the answer modal (VoiceDebugLog) */
+.voice-debug { font-size: 0.8rem; color: var(--muted); }
+.voice-debug summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.voice-debug button { margin: 4px 0; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+.voice-debug pre { max-height: 30dvh; overflow: auto; white-space: pre-wrap; margin: 0; }

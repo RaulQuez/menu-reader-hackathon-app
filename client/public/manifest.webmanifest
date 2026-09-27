@@ -1,0 +1,10 @@
+{
+  "name": "Menu Reader",
+  "short_name": "Menu Reader",
+  "description": "Take a photo of a menu and ask about it out loud.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f24",
+  "theme_color": "#0a0f24",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

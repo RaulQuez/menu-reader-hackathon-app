@@ -1,13 +1,15 @@
 {
-  "name": "hackathon-template",
+  "name": "menu-reader",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Voice-first menu reader for low-vision diners",
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"npm run server\" \"npm run client\"",
-    "server": "cd server && .venv\\Scripts\\python app.py",
+    "dev:phone": "concurrently -n server,client -c blue,green \"npm run server\" \"npm run client:phone\"",
+    "server": "node scripts/venv-python.js",
     "client": "cd client && npm run dev",
-    "build": "cd client && npm install && npm run build"
+    "client:phone": "cd client && npm run dev -- --mode phone",
+    "build": "cd client && npm install && npm run build",
+    "test": "node scripts/venv-python.js -m pytest -q"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,81 @@
+/* Design tokens: every color, font and size the app uses, in one place.
+   Components only use these variables, so a new theme is a change here only.
+   Every text/background pair is checked for WCAG AAA contrast (7:1 or more),
+   because our users are people who struggle with low-contrast text. */
+
+:root {
+  /* dark theme (default, matches the mockup) */
+  --bg: #0a0f24;          /* page */
+  --hero-bg: #0e1d4a;     /* top panel on the home screen */
+  --surface: #11224f;     /* cards */
+  --border: #2a3d7a;
+  --text: #ffffff;        /* 15:1 on cards */
+  --muted: #c9d3f0;       /* 10:1 on cards (the mockup's grey-blue was 6.4:1, too low) */
+  --brand: #ffd400;       /* the yellow scan button */
+  --on-brand: #0b0b0b;    /* text on yellow, 13.7:1 */
+  --link: #ffd400;        /* links + the active tab */
+  --avoid: #ff9b87;       /* "contains your allergen", 7.5:1 on cards */
+  --ask: #ffc46b;         /* "may contain, ask your server", 9.8:1 on cards */
+  --focus: #4dc3ff;
+  --nav-bg: #05081a;
+
+  --font: 'Atkinson Hyperlegible Next', system-ui, sans-serif; /* made for low-vision readers */
+  --radius: 16px;
+  --radius-lg: 28px;
+  --tap: 56px;            /* minimum height for anything tappable */
+
+  font: 20px/1.45 var(--font);
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* light theme for users whose phones are set to light mode */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --hero-bg: #eef2ff;
+    --surface: #ffffff;
+    --border: #7a86a8;
+    --text: #0b0b0b;
+    --muted: #3b4668;
+    --brand: #ffd400;
+    --on-brand: #0b0b0b;
+    --link: #0033a0;      /* yellow text is unreadable on white, so links turn blue */
+    --avoid: #8f1a0b;
+    --ask: #7a4100;
+    --focus: #0063d1;
+    --nav-bg: #eef2ff;
+    color-scheme: light;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; background: var(--bg); }
+
+h1, h2, h3, p { margin: 0; }
+
+button, input { font: inherit; color: inherit; }
+
+a { color: var(--link); }
+
+:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* readable by screen readers, invisible on screen */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

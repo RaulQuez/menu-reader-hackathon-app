@@ -2,11 +2,13 @@
 import os
 import sys # lets us control how the program exists, e.g exiting with error code if something goes wrong
 import requests # lets us make http calls, used to talk to github api & gemini API
+import time # lets us pause between retries if gemini api is busy
+from pathlib import Path # lets us read BLUEPRINT.md from the checked-out repo
 
 # read in the secrets/values passed from the workflow
 # os.environ is a dictionary of all environment variables available to this scirpt
-GEMINI_API_KEY = os.environ("GEMINI_API_KEY")
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+MODEL = os.environ.get("GEMINI_MODEL") or "gemini-flash-latest"
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"] # auto provided by github actions
 PR_NUMBER = os.environ["PR_NUMBER"] # which PR number triggered this run
 REPO = os.environ["REPO"]   # REPO name, e.g "raulquez/pr-bot"
@@ -36,6 +38,11 @@ def get_pr_diff():
     #.text gives us the raw diff as a plain string
     return response.text
 
+# the project plan (written by the planning agents) so reviews can check PRs against the MVP
+def load_blueprint():
+    path = Path("BLUEPRINT.md")
+    return path.read_text(encoding="utf-8")[:8000] if path.exists() else ""
+
 # we pass the diff to the gemini api and get back written feedback
 def review_with_gemini(diff):
     #gemini api endpoint for code review
@@ -44,9 +51,13 @@ def review_with_gemini(diff):
     headers = {"x-goog-api-key": GEMINI_API_KEY}
 
     # our prompt to gemini and we embed our diff inside
-    prompt = f"""You are a helpful, concise code reviewer. Review this pull request diff.
+    prompt = f"""You are a helpful, concise code reviewer for a hackathon team. Review this pull request diff.
     Point out real bugs, risky patterns, and style issues. Use short markdown bullet points.
-    If the Code looks solid say so briefly instead of inventing nitpicks.
+    If a project blueprint is given, also flag changes that drift from the MVP or start
+    stretch-goal work early. If the Code looks solid say so briefly instead of inventing nitpicks.
+
+    Project blueprint:
+    {load_blueprint() or "(none)"}
 
     Diff:
     {diff}
@@ -56,9 +67,20 @@ def review_with_gemini(diff):
     # each with "parts" containing the actual text. gemini api documented format btw
     body = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    # send POST request (heres data process it and repond) passing our dictionary as JSON auto via json=arugment
-    response = requests.post(url, headers=headers, json=body, timeout=60)
-    response.raise_for_status()  # raise exception if gemini responds with an error
+    # retry logic for when met with 503 errors (google api server busy, not a code error)
+    attempts = 3
+    for attempt in range(1, attempts + 1):
+        # send POST request (heres data process it and repond) passing our dictionary as JSON auto via json=arugment
+        response = requests.post(url, headers=headers, json=body, timeout=60)
+
+        if response.status_code in (429, 503) and attempt < attempts:
+            wait_seconds = attempt * 5 # waits 5 seconds then 10 between retries
+            print(f"Gemini API returned {response.status_code}. Retrying in {wait_seconds} seconds. Attempt: {attempt}/{attempts}")
+            time.sleep(wait_seconds)
+            continue
+
+        response.raise_for_status()  # raise exception if gemini responds with an error
+        break
 
     data = response.json() # JSON parses response text into a Python dictionary
 
@@ -91,7 +113,7 @@ def main():
         return # exits function early
 
     # len() gives us the character count of the string, gemini has a limit on how much text it can accept so huge diffs get cut down
-    #[:2000] is "slicing" - only takes the first 20,000 characters 
+    #[:20000] is "slicing" - only takes the first 20,000 characters 
     if len(diff) > 20000:
         diff = diff[:20000] + "\n\n...(diff truncated due to length)"
 
