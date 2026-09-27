@@ -1,42 +1,55 @@
-# Hackathon Template: React + Flask
+# Menu Reader
 
-A starter for hackathons: a **Vite + React** frontend and a **Flask** backend in one repo, set up so you can start building features right away.
+**Point your phone at a menu, and ask about it out loud.**
 
-- **Development:** Vite proxies every `/api` request to Flask, so there's no CORS setup.
-- **Production:** Flask serves the built React app *and* the API from a single origin, so you deploy one service.
+Menu Reader is a voice-first web app for people who can't easily read restaurant menus: people with low vision, people with food allergies, and travellers reading a menu in another language. Take a photo of the menu, then listen to it, ask questions ("what's the cheapest pasta?"), or have any dish described, with allergy alerts that are written by code, not guessed by AI.
 
-The same frontend code (`fetch("/api/...")`) works in both, with no hardcoded URLs.
+## Features
 
-## Project Structure
+- **Scan a menu:** up to 4 photos. Gemini reads every dish, price, and likely allergen.
+- **Read, Describe, Ask:** on every dish.
+  - **Read:** reads the dish aloud instantly, on the phone (no server call).
+  - **Describe:** what the dish usually looks and tastes like, and how it's eaten.
+  - **Ask:** voice or typed questions, with follow-ups ("is it spicy?").
+- **Allergy alerts you can trust:** pick your allergies once. Dishes that *contain* them come with an alert first; dishes that *might* contain them come with a "check with your server" note. The app never calls a dish "safe".
+- **Translation:** English, Spanish, French, Chinese and Arabic. Menus and answers are translated, and each dish keeps its printed name so you can order it.
+- **Voice:** tap to talk, tap again to send, with your words shown live as you speak.
+- **Accessible by design:** high-contrast AAA colours, large touch targets, a font made for low vision (Atkinson Hyperlegible), sound cues, and a screen-reader mode that leaves reading to VoiceOver / TalkBack.
+- **Recent scans:** saved on the phone, with avoid / ask counts for your allergies.
+
+## How it works
 
 ```
-hackathon-template/
-├── client/              # Vite + React frontend
-│   ├── src/
-│   │   ├── api.js       # fetch helper, use this for all API calls
-│   │   └── App.jsx
-│   └── vite.config.js   # dev proxy: /api → localhost:5001
-├── server/              # Flask backend
-│   ├── app.py           # API routes + serves the React build
-│   ├── requirements.txt
-│   └── .env.example     # copy to .env and fill in keys
-└── package.json         # root scripts to run everything at once
+Phone (React)                         Flask server                      Gemini
+─────────────                         ────────────                      ──────
+photos ──► POST /api/parse ─────────► shrink photos ─────────────────► read + translate menu (JSON)
+           menu saved on the phone ◄── clean_menu() (fix mistakes)  ◄──
+question ─► POST /api/ask ──────────► search_menu tool ◄──────────────► chooses filters
+           (menu sent with it)        find_items() in Python             writes the answer
+           answer read aloud ◄──────── + allergy alerts (code) ◄───────
 ```
 
-## Prerequisites
+**Code decides, AI phrases.** Prices, filtering, sorting and allergy alerts are plain Python (`server/menu.py`, `server/ai.py`), tested in `server/tests/`. Gemini only understands questions and writes descriptions, so it can't invent a price or miss an allergy.
 
-- **Node.js** 20+
-- **Python** 3.10+ (on Windows, install it from python.org and check **"Add python.exe to PATH"**)
+**The server keeps nothing.** The phone stores each scan and sends the menu with every question, so server restarts and sleeping hosts can't lose a menu.
+
+## Tech stack
+
+| Part | Tech |
+|---|---|
+| Frontend | React 19, Vite, React Router |
+| Backend | Python, Flask, Pydantic, Pillow |
+| AI | Google Gemini (`google-genai`): vision, structured output, tool calling |
+| Voice | Browser Web Speech API (speech recognition + speech synthesis), free and on-device |
+| CI | GitHub Actions PR review bot (Gemini) |
 
 ## Setup
 
-### 1. Get the code
+**You need:** Node.js 20+, Python 3.10+, and a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
-Click **"Use this template"** on GitHub, then clone your new repo.
+### 1. Backend
 
-### 2. Backend
-
-**Windows (PowerShell):**
+Windows (PowerShell):
 
 ```powershell
 cd server
@@ -46,7 +59,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-**macOS / Linux:**
+macOS / Linux:
 
 ```bash
 cd server
@@ -56,7 +69,18 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-### 3. Frontend and root tools
+Then put your key in `server/.env`:
+
+```dotenv
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+> Put the key in `.env`, **not** `.env.example` (that file is committed). Leave the key empty to run in **mock mode**, with a sample menu and no AI calls, which is handy for working on the UI.
+>
+> `gemini-3.5-flash-lite` is recommended: `gemini-flash-latest` has a much lower daily free-tier limit.
+
+### 2. Frontend
 
 From the repo root:
 
@@ -65,102 +89,98 @@ npm install
 cd client && npm install
 ```
 
-## Running in Development
-
-With the venv **activated**, run this from the repo root:
+## Running
 
 ```bash
 npm run dev
 ```
 
-This starts both servers together, with color-coded logs:
+Open **http://localhost:5173**. This starts Flask (port 5001) and Vite (port 5173) together; Vite forwards `/api` requests to Flask.
 
-| Service | URL                     |
-|---------|-------------------------|
-| React   | http://localhost:5173   |
-| Flask   | http://localhost:5001   |
+### Testing on a phone (use ngrok)
 
-Open **localhost:5173**. The page should show **"Backend: ok"**. Vite hot-reloads the frontend, and Flask's debug mode reloads the backend when you save.
-
-## Adding an API Route
-
-1. Add the route in `server/app.py`. **Every route must start with `/api/`**:
-
-   ```python
-   @app.get("/api/items")
-   def get_items():
-       return jsonify(items=[])
-   ```
-
-   Define API routes **above** the React catch-all route at the bottom of the file.
-
-2. Call it from React with the helper. Pass only the path **after** `/api`, starting with a slash:
-
-   ```jsx
-   import { api } from "./api";
-
-   const data = await api("/items");                // GET /api/items
-   await api("/items", {                            // POST /api/items
-     method: "POST",
-     body: JSON.stringify({ name: "new item" }),
-   });
-   ```
-
-   The helper throws an error for any non-2xx response, so `.catch()` / `try-catch` receives server errors as well as network failures.
-
-## Environment Variables
-
-- Secrets go in `server/.env`, which **is never committed**. List the key *names* in `.env.example` so teammates know what they need.
-- Read them in Flask with `os.getenv("MY_API_KEY")`.
-- **Keep API keys in Flask, not React.** Anything in the frontend ships to the browser. Vite only exposes variables prefixed with `VITE_`, and only for values that are safe to make public.
-
-## Testing the Production Build Locally
+Phones only allow the microphone on HTTPS, and they don't remember the mic permission on self-signed certificates, so voice works once and then stops. Use [ngrok](https://ngrok.com) for a real HTTPS address:
 
 ```bash
-npm run build          # builds React into client/dist
-cd server
-python app.py          # Flask now serves the built app
+npm run dev
 ```
 
-Open **localhost:5001** (not 5173). If "Backend: ok" appears, the production setup works.
+and in a second terminal:
 
-> **Remember:** Flask serves the *built* files. After frontend changes, run `npm run build` again before testing on port 5001. During normal development, just use `npm run dev` on port 5173.
+```bash
+ngrok http 5173
+```
+
+Open the `https://….ngrok-free.app` address on your phone. Each ngrok address has its own storage, so set your allergies and rescan after restarting ngrok.
+
+> `npm run dev:phone` (self-signed HTTPS on your Wi-Fi) still works for everything except the microphone.
+
+### Tests
+
+```bash
+npm test
+```
+
+Runs the server tests (menu logic, allergy alerts, translations, API routes, and Gemini calls faked with no network).
+
+## API
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /api/health` | — | `{ status, mock }` |
+| `POST /api/parse` | multipart: `images` (up to 4), `language` | `{ menu, overview_speech, pages, mock }` |
+| `POST /api/ask` | JSON: `menu`, `question`, `allergies`, `history`, `dish`, `language` | `{ speech, items }` |
+
+Errors are always `{ "error": "…" }`, worded so the app can read them aloud.
+
+## Project structure
+
+```
+.github/            PR review bot (Gemini reviews every pull request)
+client/src/
+  pages/            HomePage, MenuPage, SettingsPage, ReadingPage, WelcomePage
+  components/       BottomNav, AnswerSheet (answer modal), ScanCard, ...
+  context/, hooks/  settings (allergies, language), saved scans, voice
+  lib/              api, speech (voice in/out), spoken (Read text), languages
+  theme/tokens.css  colours and sizes (all AAA contrast)
+server/
+  app.py            API routes
+  ai.py             everything that talks to Gemini
+  menu.py           menu model, allergy filtering (no AI)
+  i18n.py           allergen names and alert wording in each language
+  tests/            pytest suite
+scripts/            cross-platform helper to run the server's Python
+```
 
 ## Deploying (Render)
 
-Create **one Web Service** connected to your repo:
+Create one **Web Service** from this repo:
 
-| Setting       | Value                                                         |
-|---------------|---------------------------------------------------------------|
-| Build command | `npm run build && pip install -r server/requirements.txt`     |
-| Start command | `cd server && gunicorn app:app`                               |
+| Setting | Value |
+|---|---|
+| Build command | `npm run build && pip install -r server/requirements.txt` |
+| Start command | `cd server && gunicorn app:app --timeout 90` |
+| Environment | `GEMINI_API_KEY`, `GEMINI_MODEL` |
 
-Add your `.env` values under **Environment** in the Render dashboard.
+Flask serves the built React app and the API from one address. The free tier sleeps when idle, so open the site a minute before a demo.
 
-## Windows Notes
+## PR review bot
 
-- **`python3` not found:** On Windows, use `py` or `python`. The `python3` command is a Microsoft Store shortcut.
-- **"Running scripts is disabled on this system":** Run this once, then activate again:
-  ```powershell
-  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-  ```
-- **Venv paths:** Windows uses `.venv\Scripts\`, and macOS/Linux use `.venv/bin/`.
-- **Gunicorn doesn't run on Windows** (it's Unix-only). That's fine, because Render runs Linux. Test production locally with `python app.py` instead.
-- **`requirements.txt` looks like binary on GitHub:** Older PowerShell saved it as UTF-16. Regenerate it:
-  ```powershell
-  pip freeze | Out-File -Encoding utf8 requirements.txt
-  ```
+Every pull request gets a Gemini code review comment. To enable it, add `GEMINI_API_KEY` in **Settings → Secrets and variables → Actions**. If there's a `BLUEPRINT.md` in the repo, the bot also flags changes that drift from the plan.
 
-## Troubleshooting
+## Known limitations
 
-| Symptom | Cause / Fix |
-|---------|-------------|
-| `Backend: error: 404 Not Found` | The request URL doesn't match a Flask route. Check the Flask terminal log for the exact URL. Watch for a doubled prefix (`/api/api/...`) or a double slash (`/api//...`). |
-| `No module named flask` | The venv isn't activated in the terminal where you ran `npm run dev`. |
-| `Unexpected token '<'` in the browser console | An API call got `index.html` back instead of JSON, which usually means the path doesn't start with `/api/`. |
-| Port 5000 already in use (macOS) | AirPlay Receiver uses port 5000. That's why this template uses 5001. |
-| Frontend change doesn't show on port 5001 | Run `npm run build` again, because Flask serves the built files. |
+- **Menus don't list every ingredient.** Alerts are based on the menu text plus common recipes; always confirm with the server.
+- AI allergen tagging can vary between scans of the same menu.
+- Voice quality depends on the phone. On iPhone, download an **Enhanced** or **Premium** voice (Settings → Accessibility → Spoken Content → Voices) for a more natural voice.
+- The app's own buttons and labels are English only; menus and answers are translated.
+- Translations of the allergy wording still need a native-speaker review.
+- The Gemini free tier has daily limits; use a separate key for demo day.
 
-## Tech Stack
+## Roadmap
 
-React · Vite · ESLint · Flask · python-dotenv · Gunicorn · concurrently
+- Voice picker and speed control in Settings
+- Optional natural AI voice (Gemini text-to-speech) with the phone voice as a fallback
+- Delete saved scans
+- Translate the app's own buttons and labels
+- Profiles (save preferences with your email)
